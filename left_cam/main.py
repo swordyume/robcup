@@ -21,6 +21,7 @@ class LeftCamApp:
         self._timer_since = None
         self._box_prev = False
         self._decided_cmd = None
+        self._is_timing=False
 
     def run(self):
         while not app.need_exit():
@@ -41,6 +42,7 @@ class LeftCamApp:
         cmd = None
         for obj in results:
             cmd = self.recognizer.get_color_cmd(obj.char_str())
+            print(obj.char_str())
             if cmd is not None:
                 break
         self._update_color_cmd(cmd, box_present)
@@ -55,21 +57,27 @@ class LeftCamApp:
         if rising and self._decided_cmd is not None:
             self._decided_cmd = None
             self._timer_since = now
+            self._is_timing=True
         elif box_present and self._timer_since is None:
             self._timer_since = now
+            self._is_timing=True
 
-        # 识别到有效汉字：采用该颜色；“白”兜底可被覆盖
-        if cmd is not None and self._decided_cmd in (None, COLOR_MAP["白"]):
+        # 识别到有效汉字：本轮计时终止，采用该颜色；“白”兜底可被覆盖
+        # if cmd is not None and self._decided_cmd in (None, COLOR_MAP["白"]):
+        if cmd is not None:
             self._decided_cmd = cmd
+            self.uart.send_color(self._decided_cmd)
+            self._is_timing=False
 
-        # 计时满阈值仍无有效汉字：按“白”处理；计时不会因货站消失而终止
-        if (self._decided_cmd is None and self._timer_since is not None
+        # 计时满阈值仍无有效汉字：按“白”处理；计时不会因货站消失/detect 变 false 而终止
+        # if (self._decided_cmd is None and self._timer_since is not None
+        #         and now - self._timer_since >= WHITE_FALLBACK_DELAY_S):
+        if (self._decided_cmd is None and self._is_timing==True and self._timer_since is not None
                 and now - self._timer_since >= WHITE_FALLBACK_DELAY_S):
             self._decided_cmd = COLOR_MAP["白"]
-
-        if self._decided_cmd is not None:
             self.uart.send_color(self._decided_cmd)
-            self._decided_cmd = 7
+            print("白")
+            self._is_timing=False
 
 
 if __name__ == "__main__":
