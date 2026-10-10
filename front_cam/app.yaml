@@ -1,0 +1,12 @@
+id: cam_1
+name: front_cam
+version: 1.0.6
+author: lhb
+icon: app.png
+desc: 前方相机去掉防跳变
+files:
+  - color_detector.py
+  - config.py
+  - display_manager.py
+  - main.py
+  - uart_manager.py
