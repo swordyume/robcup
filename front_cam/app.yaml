@@ -1,6 +1,6 @@
 id: cam_1
 name: front_cam
-version: 1.0.7
+version: 1.0.9
 author: lhb
 icon: app.png
 desc: 前方相机去掉防跳变

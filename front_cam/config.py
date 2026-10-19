@@ -31,10 +31,10 @@ COLOR_THRESHOLDS = [
 # 视觉控制参数
 # =========================
 ALPHA = 0.3
-DEADBAND_U = 20
+DEADBAND_U = 6
 MAX_JUMP_PIXEL = 30
 CONTROL_INTERVAL_S = 0.1
-K_Y = 0.7
+K_Y = 0.62
 LOST_FRAME_THRESHOLD = 3
 
 # =========================

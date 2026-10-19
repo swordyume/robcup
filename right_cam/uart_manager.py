@@ -60,8 +60,6 @@ class UARTManager:
                 self.detect_enabled = False
 
     def send_color(self, cmd: int):
-        if cmd==7:
-            return
         packet = bytes([0x1C, 0x02, cmd, 0x28])
         print(cmd)                          #右边颜色id0x78
         self.uart1.write(packet)
@@ -75,3 +73,4 @@ class UARTManager:
             return
         packet = bytes([0x1C, 0xAD]) + struct.pack("<f", distance) + bytes([0x02, 0x28])              #右边相机id0x02
         self.uart1.write(packet)
+        print(packet)

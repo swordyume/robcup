@@ -1,0 +1,13 @@
+id: cam_3
+name: 右边相机
+version: 1.0.6
+author: lhb
+icon: app.png
+desc: 右边相机
+files:
+  - box_detector.py
+  - character_recognizer.py
+  - config.py
+  - display_manager.py
+  - main.py
+  - uart_manager.py

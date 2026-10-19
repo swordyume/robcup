@@ -1,7 +1,12 @@
 import time
-from maix import nn, image
+from maix import image
 from config import (
-    BOX_MODEL_PATH,
+    PAPER_THRESHOLDS,
+    PAPER_AREA_THRESHOLD,
+    PAPER_PIXELS_THRESHOLD,
+    PAPER_RATIO_MIN,
+    PAPER_RATIO_MAX,
+    PAPER_SIZE_DIFF_MAX,
     ALPHA,
     DEADBAND_U,
     MAX_JUMP_PIXEL,
@@ -13,46 +18,54 @@ from config import (
 
 class BoxDetector:
     def __init__(self, screen_weight: int):
-        self.detector = nn.YOLOv5(model=BOX_MODEL_PATH)
         self.U0 = screen_weight / 2
         self.last_u_filtered = self.U0
         self.target_lost = True
+        self.target_blob = None
         self.lost_frame_count = 0
         self.last_control_time = 0.0
-
-    @property
-    def input_width(self):
-        return self.detector.input_width()
-
-    @property
-    def input_height(self):
-        return self.detector.input_height()
-
-    @property
-    def input_format(self):
-        return self.detector.input_format()
 
     def reset(self):
         self.last_u_filtered = self.U0
         self.target_lost = True
+        self.target_blob = None
         self.lost_frame_count = 0
         self.last_control_time = 0.0
 
     def detect(self, img):
-        return self.detector.detect(img, conf_th=0.5, iou_th=0.45)
+        return img.find_blobs(
+            PAPER_THRESHOLDS,
+            area_threshold=PAPER_AREA_THRESHOLD,
+            pixels_threshold=PAPER_PIXELS_THRESHOLD,
+        )
+
+    @staticmethod
+    def _filter_square_blobs(blobs) -> list:
+        squares = []
+        for blob in blobs:
+            h = blob[3]
+            if h == 0:
+                continue
+            ratio = blob[2] / h
+            if (PAPER_RATIO_MIN < ratio < PAPER_RATIO_MAX
+                    and abs(blob[2] - h) < PAPER_SIZE_DIFF_MAX):
+                squares.append(blob)
+        return squares
 
     def update(self, img, send_move_fn) -> list:
-        objs = self.detect(img)
-        if objs:
-            self._track_target(objs, send_move_fn)
+        blobs = self._filter_square_blobs(self.detect(img))
+        if blobs:
+            self.target_blob = max(blobs, key=lambda b: b[1])
+            # img.draw_rect(self.target_blob.x(),self.target_blob.y(),self.target_blob.w(),self.target_blob.h(), image.COLOR_GREEN)
+            self._track_target(self.target_blob, send_move_fn)
         else:
+            self.target_blob = None
             self._handle_lost()
-        self._draw(img, objs)
-        return objs
+        self._draw(img, blobs)
+        return blobs
 
-    def _track_target(self, objs, send_move_fn):
-        obj = max(objs, key=lambda x: x.score)
-        u_raw = obj.x + obj.w / 2
+    def _track_target(self, blob, send_move_fn):
+        u_raw = blob[0] + blob[2] / 2
         self.lost_frame_count = 0
 
         if self.target_lost:
@@ -62,7 +75,7 @@ class BoxDetector:
             # if abs(u_raw - self.last_u_filtered) <= MAX_JUMP_PIXEL:                          #防跳变，也许可删
             self.last_u_filtered = ALPHA * u_raw + (1 - ALPHA) * self.last_u_filtered
 
-            delta_u = self.last_u_filtered - self.U0                                         
+            delta_u = self.last_u_filtered - self.U0
             now = time.perf_counter()
             if abs(delta_u) > DEADBAND_U and (now - self.last_control_time) >= CONTROL_INTERVAL_S:
                 move_y = -K_Y * delta_u                                                       #左边相机为正，右边应取负
@@ -78,8 +91,6 @@ class BoxDetector:
             self.target_lost = True
 
     @staticmethod
-    def _draw(img, objs):
-        for obj in objs:
-            img.draw_rect(obj.x, obj.y, obj.w, obj.h, color=image.COLOR_RED)
-            msg = f"{obj.class_id}: {obj.score:.2f}"
-            img.draw_string(obj.x, obj.y, msg, color=image.COLOR_RED)
+    def _draw(img, blobs):
+        for blob in blobs:
+            img.draw_rect(blob[0], blob[1], blob[2], blob[3], color=image.COLOR_GREEN)

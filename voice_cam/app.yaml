@@ -1,0 +1,11 @@
+id: cam_4
+name: 语音播报
+version: 1.0.0
+author: lhb
+icon: ''
+desc: 语音播报
+files:
+  - config.py
+  - main.py
+  - uart_manager.py
+  - voice_player.py

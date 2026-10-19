@@ -31,6 +31,7 @@ class UARTManager:
     def poll(self):
         data = self.uart1.read()
         if data:
+            print(data)
             self._rx_buf += data
             self._parse_arrive()
 

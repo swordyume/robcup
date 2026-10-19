@@ -1,8 +1,18 @@
 # =========================
 # 模型路径
 # =========================
-BOX_MODEL_PATH = "/root/models/model_321759.mud"
 OCR_MODEL_PATH = "/root/models/pp_ocr.mud"
+
+# =========================
+# 白纸色块识别（代替货站模型，用于矫正和 OCR 区域）
+# =========================
+PAPER_THRESHOLDS = [[70, 90, -10, 5, -10, 5]]  # 白色 LAB 阈值
+PAPER_AREA_THRESHOLD = 2500
+PAPER_PIXELS_THRESHOLD = 2500
+PAPER_RATIO_MIN = 0.5
+PAPER_RATIO_MAX = 1.15
+PAPER_SIZE_DIFF_MAX = 30
+PAPER_MARGIN_RATIO = 0.05  # 裁剪掉白纸边缘的比例（和 nn_pp_ocr 一致）
 
 # =========================
 # UART 配置
@@ -38,12 +48,10 @@ COLOR_MAP = {
     "黄": 0x04,
     "绿": 0x05,
     "蓝": 0x06,
+    "盗": 0x06,
+    "益": 0x06,
+    "蓄": 0x06
 }
-
-# =========================
-# “白”兜底识别
-# =========================
-WHITE_FALLBACK_DELAY_S = 3.0
 
 # =========================
 # 视觉控制参数
